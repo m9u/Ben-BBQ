@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ben's BBQ Decider 🔥</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      overflow: hidden;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      margin-bottom: 8px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    /* Coin */
+    .coin-wrapper {
+      perspective: 800px;
+      margin-bottom: 48px;
+    }
+
+    .coin {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.05s linear;
+      cursor: pointer;
+      filter: drop-shadow(0 0 20px rgba(255, 180, 0, 0.4));
+    }
+
+    .coin-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      border: 6px solid #c8860a;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 0 40px rgba(255,180,0,0.2);
+    }
+
+    .coin-heads {
+      background: radial-gradient(circle at 35% 35%, #ffe066, #c8860a);
+    }
+
+    .coin-tails {
+      background: radial-gradient(circle at 35% 35%, #d4a800, #8b5e00);
+      transform: rotateY(180deg);
+    }
+
+    /* Result banner */
+    .result {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      min-height: 2.5rem;
+      text-align: center;
+      margin-bottom: 16px;
+      transition: opacity 0.3s;
+    }
+
+    .result.bbq    { color: #ff6b35; text-shadow: 0 0 20px rgba(255,107,53,0.6); }
+    .result.no-bbq { color: #7ec8e3; text-shadow: 0 0 20px rgba(126,200,227,0.6); }
+
+    .result-sub {
+      font-size: 1rem;
+      color: #ccc;
+      min-height: 1.5rem;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    /* Button */
+    .flip-btn {
+      padding: 16px 48px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .flip-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(255, 107, 53, 0.7);
+    }
+
+    .flip-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .flip-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Stats */
+    .stats {
+      margin-top: 48px;
+      display: flex;
+      gap: 32px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    .stats span strong {
+      color: #ccc;
+    }
+
+    /* Particles */
+    .particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: rise 1.2s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes rise {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="particles" id="particles"></div>
+
+  <h1>Ben's BBQ Decider</h1>
+  <p class="subtitle">Let fate choose — heads = BBQ, tails = stay in</p>
+
+  <div class="coin-wrapper">
+    <div class="coin" id="coin">
+      <div class="coin-face coin-heads">&#x1F525;</div>
+      <div class="coin-face coin-tails">&#x1F327;</div>
+    </div>
+  </div>
+
+  <div class="result" id="result"></div>
+  <div class="result-sub" id="result-sub"></div>
+
+  <button class="flip-btn" id="flipBtn" onclick="flipCoin()">Flip the Coin</button>
+
+  <div class="stats">
+    <span>BBQ: <strong id="bbqCount">0</strong></span>
+    <span>Stay In: <strong id="noCount">0</strong></span>
+    <span>Flips: <strong id="totalCount">0</strong></span>
+  </div>
+
+  <script>
+    let bbqCount = 0;
+    let noCount  = 0;
+    let spinning = false;
+
+    const coin       = document.getElementById('coin');
+    const result     = document.getElementById('result');
+    const resultSub  = document.getElementById('result-sub');
+    const flipBtn    = document.getElementById('flipBtn');
+    const bbqEl      = document.getElementById('bbqCount');
+    const noEl       = document.getElementById('noCount');
+    const totalEl    = document.getElementById('totalCount');
+
+    const BBQ_MSGS   = ["Fire up the grill!", "Smoke 'em if you got 'em!", "Get the tongs ready!", "Let's get grilling!", "BBQ time, baby!"];
+    const NO_MSGS    = ["Maybe next time...", "Looks like a couch day.", "No smoke today.", "The grill rests.", "Raincheck on the BBQ."];
+
+    function rand(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function spawnParticles(isBBQ) {
+      const container = document.getElementById('particles');
+      const colors = isBBQ
+        ? ['#ff6b35','#f7931e','#ffe066','#ff4500']
+        : ['#7ec8e3','#a8d8ea','#b0c4de','#87ceeb'];
+
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+          width: ${6 + Math.random() * 10}px;
+          height: ${6 + Math.random() * 10}px;
+          left: ${30 + Math.random() * 40}%;
+          top: ${40 + Math.random() * 20}%;
+          background: ${rand(colors)};
+          animation-delay: ${Math.random() * 0.3}s;
+          animation-duration: ${0.8 + Math.random() * 0.6}s;
+        `;
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 1500);
+      }
+    }
+
+    function flipCoin() {
+      if (spinning) return;
+      spinning = true;
+      flipBtn.disabled = true;
+      result.textContent = '';
+      result.className = 'result';
+      resultSub.textContent = '';
+
+      const isBBQ     = Math.random() < 0.5;
+      const totalSpins = 18 + Math.floor(Math.random() * 10); // ~3s of spinning
+      let   spinCount  = 0;
+      let   rotY       = 0;
+      const interval  = 60; // ms between frames
+
+      const spin = setInterval(() => {
+        spinCount++;
+        rotY += 180;
+        coin.style.transform = `rotateY(${rotY}deg)`;
+
+        if (spinCount >= totalSpins) {
+          clearInterval(spin);
+
+          // Settle to correct face
+          const targetRot = isBBQ
+            ? Math.round(rotY / 360) * 360          // heads (0 mod 360)
+            : Math.round(rotY / 360) * 360 + 180;   // tails (180 mod 360)
+
+          coin.style.transition = 'transform 0.4s ease-out';
+          coin.style.transform  = `rotateY(${targetRot}deg)`;
+
+          setTimeout(() => {
+            coin.style.transition = '';
+            showResult(isBBQ);
+          }, 450);
+        }
+      }, interval);
+    }
+
+    function showResult(isBBQ) {
+      if (isBBQ) {
+        bbqCount++;
+        bbqEl.textContent = bbqCount;
+        result.textContent = 'BBQ IT IS!';
+        result.className   = 'result bbq';
+        resultSub.textContent = rand(BBQ_MSGS);
+      } else {
+        noCount++;
+        noEl.textContent = noCount;
+        result.textContent = 'Stay Inside...';
+        result.className   = 'result no-bbq';
+        resultSub.textContent = rand(NO_MSGS);
+      }
+
+      totalEl.textContent = bbqCount + noCount;
+      spawnParticles(isBBQ);
+
+      setTimeout(() => {
+        spinning = false;
+        flipBtn.disabled = false;
+      }, 300);
+    }
+  </script>
+</body>
+</html>
