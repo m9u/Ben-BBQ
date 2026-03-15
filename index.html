@@ -325,8 +325,6 @@
 
           setTimeout(() => {
             coin.style.transition = '';
-            faceHeads.textContent = '🍖';
-            faceTails.textContent = '🏠';
             showResult(isBBQ);
           }, 450);
         }
@@ -337,13 +335,13 @@
       if (isBBQ) {
         bbqCount++;
         document.getElementById('bbqCount').textContent = bbqCount;
-        result.textContent = 'BBQ IT IS!';
+        result.textContent = '🍖 BBQ IT IS!';
         result.className   = 'result bbq';
         resultSub.textContent = rand(BBQ_MSGS);
       } else {
         noCount++;
         document.getElementById('noCount').textContent = noCount;
-        result.textContent = 'Stay Inside...';
+        result.textContent = '🏠 Stay Inside...';
         result.className   = 'result no-bbq';
         resultSub.textContent = rand(NO_MSGS);
       }
