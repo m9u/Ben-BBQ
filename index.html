@@ -3,30 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ben's BBQ Decider 🔥</title>
+  <title>Ben's BBQ Decider</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       font-family: 'Segoe UI', sans-serif;
       color: #fff;
-      overflow: hidden;
-      padding: 20px;
+      padding: 32px 20px 48px;
+      overflow-x: hidden;
     }
 
     h1 {
       font-size: clamp(1.5rem, 5vw, 2.5rem);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       text-align: center;
       letter-spacing: 1px;
     }
@@ -34,14 +30,14 @@
     .subtitle {
       font-size: 1rem;
       color: #aaa;
-      margin-bottom: 48px;
+      margin-bottom: 36px;
       text-align: center;
     }
 
-    /* Coin */
+    /* ── Coin ── */
     .coin-wrapper {
       perspective: 800px;
-      margin-bottom: 48px;
+      margin-bottom: 36px;
     }
 
     .coin {
@@ -49,9 +45,8 @@
       height: 200px;
       position: relative;
       transform-style: preserve-3d;
-      transition: transform 0.05s linear;
       cursor: pointer;
-      filter: drop-shadow(0 0 20px rgba(255, 180, 0, 0.4));
+      filter: drop-shadow(0 0 20px rgba(255,180,0,0.4));
     }
 
     .coin-face {
@@ -77,14 +72,13 @@
       transform: rotateY(180deg);
     }
 
-    /* Result banner */
+    /* ── Result ── */
     .result {
       font-size: clamp(1.4rem, 4vw, 2rem);
       font-weight: 700;
       min-height: 2.5rem;
       text-align: center;
-      margin-bottom: 16px;
-      transition: opacity 0.3s;
+      margin-bottom: 10px;
     }
 
     .result.bbq    { color: #ff6b35; text-shadow: 0 0 20px rgba(255,107,53,0.6); }
@@ -95,10 +89,10 @@
       color: #ccc;
       min-height: 1.5rem;
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 32px;
     }
 
-    /* Button */
+    /* ── Button ── */
     .flip-btn {
       padding: 16px 48px;
       font-size: 1.1rem;
@@ -110,38 +104,106 @@
       background: linear-gradient(135deg, #ff6b35, #f7931e);
       color: #fff;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(255, 107, 53, 0.5);
+      box-shadow: 0 4px 20px rgba(255,107,53,0.5);
       transition: transform 0.15s, box-shadow 0.15s;
     }
 
     .flip-btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 28px rgba(255, 107, 53, 0.7);
+      box-shadow: 0 6px 28px rgba(255,107,53,0.7);
     }
 
-    .flip-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
+    .flip-btn:active:not(:disabled) { transform: translateY(0); }
 
     .flip-btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
 
-    /* Stats */
+    /* ── Stats ── */
     .stats {
-      margin-top: 48px;
+      margin-top: 24px;
       display: flex;
       gap: 32px;
       font-size: 0.9rem;
       color: #888;
     }
 
-    .stats span strong {
-      color: #ccc;
+    .stats span strong { color: #ccc; }
+
+    /* ── Weather card ── */
+    .weather-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
     }
 
-    /* Particles */
+    .weather-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .weather-day {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 12px 8px;
+      text-align: center;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+
+    .weather-day:hover { background: rgba(255,255,255,0.11); }
+
+    .weather-day .wd-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .weather-day .wd-icon  { font-size: 2rem; line-height: 1; margin-bottom: 6px; }
+
+    .weather-day .wd-temp {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .weather-day .wd-temp span { color: #888; font-weight: 400; }
+
+    .weather-day .wd-desc {
+      font-size: 0.68rem;
+      color: #888;
+      margin-top: 4px;
+      line-height: 1.2;
+    }
+
+    .weather-day.bbq-day {
+      border-color: rgba(255,107,53,0.5);
+      background: rgba(255,107,53,0.1);
+    }
+
+    .weather-loading {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      padding: 20px 0;
+    }
+
+    /* ── Particles ── */
     .particles {
       position: fixed;
       top: 0; left: 0;
@@ -168,12 +230,12 @@
   <div class="particles" id="particles"></div>
 
   <h1>Ben's BBQ Decider</h1>
-  <p class="subtitle">Let fate choose — heads = BBQ, tails = stay in</p>
+  <p class="subtitle">Heads = BBQ &nbsp;|&nbsp; Tails = Stay in</p>
 
   <div class="coin-wrapper">
     <div class="coin" id="coin">
-      <div class="coin-face coin-heads">&#x1F525;</div>
-      <div class="coin-face coin-tails">&#x1F327;</div>
+      <div class="coin-face coin-heads">&#x1F356;</div>
+      <div class="coin-face coin-tails">&#x1F614;</div>
     </div>
   </div>
 
@@ -188,25 +250,27 @@
     <span>Flips: <strong id="totalCount">0</strong></span>
   </div>
 
+  <!-- Weather -->
+  <section class="weather-section">
+    <div class="weather-title">Amsterdam Weather This Week</div>
+    <div class="weather-grid" id="weatherGrid">
+      <div class="weather-loading">Loading weather...</div>
+    </div>
+  </section>
+
   <script>
-    let bbqCount = 0;
-    let noCount  = 0;
-    let spinning = false;
+    /* ── Coin flip ── */
+    let bbqCount = 0, noCount = 0, spinning = false;
 
-    const coin       = document.getElementById('coin');
-    const result     = document.getElementById('result');
-    const resultSub  = document.getElementById('result-sub');
-    const flipBtn    = document.getElementById('flipBtn');
-    const bbqEl      = document.getElementById('bbqCount');
-    const noEl       = document.getElementById('noCount');
-    const totalEl    = document.getElementById('totalCount');
+    const coin      = document.getElementById('coin');
+    const result    = document.getElementById('result');
+    const resultSub = document.getElementById('result-sub');
+    const flipBtn   = document.getElementById('flipBtn');
 
-    const BBQ_MSGS   = ["Fire up the grill!", "Smoke 'em if you got 'em!", "Get the tongs ready!", "Let's get grilling!", "BBQ time, baby!"];
-    const NO_MSGS    = ["Maybe next time...", "Looks like a couch day.", "No smoke today.", "The grill rests.", "Raincheck on the BBQ."];
+    const BBQ_MSGS = ["Fire up the grill!", "Smoke 'em if you got 'em!", "Get the tongs ready!", "Let's get grilling!", "BBQ time, baby!"];
+    const NO_MSGS  = ["Maybe next time...", "Looks like a couch day.", "No smoke today.", "The grill rests.", "Raincheck on the BBQ."];
 
-    function rand(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
-    }
+    function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     function spawnParticles(isBBQ) {
       const container = document.getElementById('particles');
@@ -218,13 +282,11 @@
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.cssText = `
-          width: ${6 + Math.random() * 10}px;
-          height: ${6 + Math.random() * 10}px;
-          left: ${30 + Math.random() * 40}%;
-          top: ${40 + Math.random() * 20}%;
-          background: ${rand(colors)};
-          animation-delay: ${Math.random() * 0.3}s;
-          animation-duration: ${0.8 + Math.random() * 0.6}s;
+          width:${6 + Math.random()*10}px; height:${6 + Math.random()*10}px;
+          left:${30 + Math.random()*40}%; top:${40 + Math.random()*20}%;
+          background:${rand(colors)};
+          animation-delay:${Math.random()*0.3}s;
+          animation-duration:${0.8 + Math.random()*0.6}s;
         `;
         container.appendChild(p);
         setTimeout(() => p.remove(), 1500);
@@ -239,24 +301,20 @@
       result.className = 'result';
       resultSub.textContent = '';
 
-      const isBBQ     = Math.random() < 0.5;
-      const totalSpins = 18 + Math.floor(Math.random() * 10); // ~3s of spinning
-      let   spinCount  = 0;
-      let   rotY       = 0;
-      const interval  = 60; // ms between frames
+      const isBBQ = Math.random() < 0.5;
+      const totalSpins = 18 + Math.floor(Math.random() * 10);
+      let spinCount = 0, rotY = 0;
 
-      const spin = setInterval(() => {
+      const spinInterval = setInterval(() => {
         spinCount++;
         rotY += 180;
         coin.style.transform = `rotateY(${rotY}deg)`;
 
         if (spinCount >= totalSpins) {
-          clearInterval(spin);
-
-          // Settle to correct face
+          clearInterval(spinInterval);
           const targetRot = isBBQ
-            ? Math.round(rotY / 360) * 360          // heads (0 mod 360)
-            : Math.round(rotY / 360) * 360 + 180;   // tails (180 mod 360)
+            ? Math.round(rotY / 360) * 360
+            : Math.round(rotY / 360) * 360 + 180;
 
           coin.style.transition = 'transform 0.4s ease-out';
           coin.style.transform  = `rotateY(${targetRot}deg)`;
@@ -266,32 +324,102 @@
             showResult(isBBQ);
           }, 450);
         }
-      }, interval);
+      }, 60);
     }
 
     function showResult(isBBQ) {
       if (isBBQ) {
         bbqCount++;
-        bbqEl.textContent = bbqCount;
+        document.getElementById('bbqCount').textContent = bbqCount;
         result.textContent = 'BBQ IT IS!';
         result.className   = 'result bbq';
         resultSub.textContent = rand(BBQ_MSGS);
       } else {
         noCount++;
-        noEl.textContent = noCount;
+        document.getElementById('noCount').textContent = noCount;
         result.textContent = 'Stay Inside...';
         result.className   = 'result no-bbq';
         resultSub.textContent = rand(NO_MSGS);
       }
-
-      totalEl.textContent = bbqCount + noCount;
+      document.getElementById('totalCount').textContent = bbqCount + noCount;
       spawnParticles(isBBQ);
-
-      setTimeout(() => {
-        spinning = false;
-        flipBtn.disabled = false;
-      }, 300);
+      setTimeout(() => { spinning = false; flipBtn.disabled = false; }, 300);
     }
+
+    /* ── Amsterdam Weather (Open-Meteo, no API key needed) ── */
+    const WMO = {
+      0:  ['☀️',  'Clear'],
+      1:  ['🌤️', 'Mainly clear'],
+      2:  ['⛅',  'Partly cloudy'],
+      3:  ['☁️',  'Overcast'],
+      45: ['🌫️', 'Foggy'],
+      48: ['🌫️', 'Icy fog'],
+      51: ['🌦️', 'Light drizzle'],
+      53: ['🌦️', 'Drizzle'],
+      55: ['🌧️', 'Heavy drizzle'],
+      61: ['🌧️', 'Light rain'],
+      63: ['🌧️', 'Rain'],
+      65: ['🌧️', 'Heavy rain'],
+      71: ['🌨️', 'Light snow'],
+      73: ['🌨️', 'Snow'],
+      75: ['❄️',  'Heavy snow'],
+      80: ['🌦️', 'Showers'],
+      81: ['🌧️', 'Rain showers'],
+      82: ['⛈️',  'Violent showers'],
+      95: ['⛈️',  'Thunderstorm'],
+      99: ['⛈️',  'Hail storm'],
+    };
+
+    function wmoInfo(code) {
+      return WMO[code] || ['🌡️', 'Unknown'];
+    }
+
+    function isBBQWeather(maxTemp, code) {
+      const goodCodes = [0, 1, 2];
+      return maxTemp >= 18 && goodCodes.includes(code);
+    }
+
+    async function loadWeather() {
+      const grid = document.getElementById('weatherGrid');
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast'
+          + '?latitude=52.374&longitude=4.8897'
+          + '&daily=weathercode,temperature_2m_max,temperature_2m_min'
+          + '&timezone=Europe%2FAmsterdam&forecast_days=7';
+
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        const days   = data.daily.time;
+        const codes  = data.daily.weathercode;
+        const maxTs  = data.daily.temperature_2m_max;
+        const minTs  = data.daily.temperature_2m_min;
+
+        const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+        grid.innerHTML = '';
+        days.forEach((dateStr, i) => {
+          const date   = new Date(dateStr + 'T12:00:00');
+          const name   = i === 0 ? 'Today' : dayNames[date.getDay()];
+          const [icon, desc] = wmoInfo(codes[i]);
+          const bbq    = isBBQWeather(maxTs[i], codes[i]);
+
+          const card = document.createElement('div');
+          card.className = 'weather-day' + (bbq ? ' bbq-day' : '');
+          card.innerHTML = `
+            <div class="wd-name">${name}</div>
+            <div class="wd-icon">${icon}</div>
+            <div class="wd-temp">${Math.round(maxTs[i])}° <span>${Math.round(minTs[i])}°</span></div>
+            <div class="wd-desc">${desc}${bbq ? '<br>🔥 BBQ!' : ''}</div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        grid.innerHTML = '<div class="weather-loading">Could not load weather.</div>';
+      }
+    }
+
+    loadWeather();
   </script>
 </body>
 </html>
