@@ -325,6 +325,8 @@
 
           setTimeout(() => {
             coin.style.transition = '';
+            if (isBBQ) faceHeads.textContent = '🍖';
+            else        faceTails.textContent = '🏠';
             showResult(isBBQ);
           }, 450);
         }
