@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ben's BBQ Decider</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.js" crossorigin=""></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -681,6 +683,98 @@
       color: #888;
     }
 
+    /* ── BBQ Zones Map ── */
+    .bbqmap-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .bbqmap-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .bbqmap-subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #666;
+      margin-bottom: 14px;
+    }
+
+    .bbqmap-frame {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+    }
+
+    #bbqMap {
+      width: 100%;
+      height: 420px;
+      background: #111;
+    }
+
+    .bbqmap-legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #888;
+    }
+
+    .bbqmap-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bbqmap-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .bbqmap-link {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    .bbqmap-link a { color: #666; text-decoration: none; }
+    .bbqmap-link a:hover { text-decoration: underline; }
+
+    .bbq-tooltip {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,107,53,0.4);
+      color: #ddd;
+      font-size: 0.78rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      box-shadow: none;
+    }
+
+    .bbqmap-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 0.85rem;
+      pointer-events: none;
+      z-index: 400;
+    }
+
     /* ── Live Radar ── */
     .radar-section {
       margin-top: 48px;
@@ -809,6 +903,24 @@
     <div class="calc-result" id="calcResult">
       <div class="calc-result-empty">Select meat and cut above</div>
     </div>
+  </section>
+
+  <!-- BBQ Zones Map -->
+  <section class="bbqmap-section">
+    <div class="bbqmap-title">BBQ Zones in Amsterdam</div>
+    <div class="bbqmap-subtitle">Green markers = designated BBQ spots &nbsp;|&nbsp; Orange = district boundary</div>
+    <div class="bbqmap-frame">
+      <div id="bbqMap"></div>
+      <div class="bbqmap-loading" id="bbqMapLoading">Loading map…</div>
+    </div>
+    <div class="bbqmap-legend">
+      <div class="bbqmap-legend-item"><div class="bbqmap-dot" style="background:#4ade80"></div> BBQ allowed spot</div>
+      <div class="bbqmap-legend-item"><div class="bbqmap-dot" style="background:#ff6b35;border-radius:2px;width:14px;height:3px"></div> Stadsdeel boundary</div>
+    </div>
+    <p class="bbqmap-link">
+      Full zone rules per park →
+      <a href="https://maps.amsterdam.nl/bbq/?LANG=en" target="_blank" rel="noopener">Official Amsterdam BBQ Map</a>
+    </p>
   </section>
 
   <!-- Weather -->
@@ -1492,6 +1604,97 @@
     }
 
     loadAHDeals();
+
+    /* ── BBQ Zones Map (Leaflet) ── */
+    async function initBBQMap() {
+      const loadingEl = document.getElementById('bbqMapLoading');
+
+      const map = L.map('bbqMap', {
+        center: [52.370, 4.895],
+        zoom: 12,
+        zoomControl: true,
+        attributionControl: true,
+      });
+
+      // Dark tile layer matching the site theme
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // 1) Amsterdam stadsdeel boundaries from official WFS
+      try {
+        const wfsUrl = 'https://map.data.amsterdam.nl/maps/gebieden'
+          + '?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature'
+          + '&TYPENAMES=gebieden:stadsdeel&OUTPUTFORMAT=application/json';
+        const resp = await fetch(wfsUrl);
+        if (resp.ok) {
+          const geoJson = await resp.json();
+          L.geoJSON(geoJson, {
+            style: {
+              color: '#ff6b35',
+              weight: 1.5,
+              fillColor: '#ff6b35',
+              fillOpacity: 0.04,
+            },
+            onEachFeature(feature, layer) {
+              const name = feature.properties?.naam || feature.properties?.statnaam || '';
+              if (name) layer.bindTooltip(name, { sticky: true, className: 'bbq-tooltip' });
+            },
+          }).addTo(map);
+        }
+      } catch (e) { /* non-critical, continue */ }
+
+      // 2) BBQ spots from Overpass API
+      try {
+        const q = '[out:json][timeout:20];('
+          + 'node["leisure"="bbq"](52.28,4.73,52.45,5.05);'
+          + 'node["amenity"="bbq"](52.28,4.73,52.45,5.05);'
+          + ');out body;';
+        const resp = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q));
+        if (resp.ok) {
+          const data = await resp.json();
+          data.elements.forEach(el => {
+            if (el.lat && el.lon) {
+              const name = el.tags?.name || el.tags?.description || 'BBQ spot';
+              L.circleMarker([el.lat, el.lon], {
+                radius: 7,
+                color: '#fff',
+                weight: 1,
+                fillColor: '#4ade80',
+                fillOpacity: 0.9,
+              }).bindPopup(`<strong>${name}</strong>`).addTo(map);
+            }
+          });
+        }
+      } catch (e) { /* non-critical */ }
+
+      // 3) Try Amsterdam BBQ zone polygons from WFS (layer name may vary)
+      for (const layer of ['bbq:bbq_locaties', 'bbq', 'bbq:bbq']) {
+        try {
+          const url = 'https://map.data.amsterdam.nl/maps/bbq'
+            + '?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature'
+            + `&TYPENAMES=${layer}&OUTPUTFORMAT=application/json`;
+          const resp = await fetch(url);
+          if (!resp.ok) continue;
+          const gj = await resp.json();
+          if (!gj.features?.length) continue;
+          L.geoJSON(gj, {
+            style: { color: '#4ade80', weight: 1.5, fillColor: '#4ade80', fillOpacity: 0.25 },
+            onEachFeature(feature, lyr) {
+              const n = feature.properties?.naam || feature.properties?.name || 'BBQ zone';
+              lyr.bindPopup(`<strong>${n}</strong>`);
+            },
+          }).addTo(map);
+          break;
+        } catch (e) { /* try next */ }
+      }
+
+      loadingEl.style.display = 'none';
+    }
+
+    initBBQMap();
 
   </script>
 </body>
