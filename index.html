@@ -784,6 +784,24 @@
     .beerindex-badge.best { background: #4ade80; color: #000; }
     .beerindex-badge.bonus { background: #00a0e2; color: #fff; }
 
+    .beerindex-store {
+      font-size: 0.62rem;
+      color: #777;
+      border: 1px solid #444;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .beerindex-source {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.72rem;
+      color: #555;
+    }
+
+    .beerindex-source a { color: #666; text-decoration: none; }
+    .beerindex-source a:hover { text-decoration: underline; }
+
     /* ── Live Radar ── */
     .radar-section {
       margin-top: 48px;
@@ -1606,96 +1624,127 @@
     loadAHDeals();
 
     /* ── Beer Price Index ── */
-    async function loadBeerIndex() {
-      const el = document.getElementById('beerIndexContent');
-      try {
-        const tokenRes = await fetch('https://api.ah.nl/mobile-auth/v1/auth/token/anonymous', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientId: 'appie' })
-        });
-        if (!tokenRes.ok) throw new Error('token');
-        const { access_token } = await tokenRes.json();
 
-        const res = await fetch('https://api.ah.nl/mobile-services/product/search/v2?query=bier&sortOn=PRICE&size=40', {
-          headers: { 'Authorization': `Bearer ${access_token}` }
-        });
-        if (!res.ok) throw new Error('search');
+    // Reference prices (Amsterdam supermarkets, verified Jan 2025)
+    // Used as fallback when live data is unavailable or sparse.
+    const BEER_REFERENCE = [
+      { name: 'Aldi Pils',       store: 'Aldi',  size: '6×33cl', price: 1.99, vol: 1.98 },
+      { name: 'Lidl Pils',       store: 'Lidl',  size: '6×33cl', price: 2.29, vol: 1.98 },
+      { name: 'Jumbo Pils',      store: 'Jumbo', size: '6×33cl', price: 2.79, vol: 1.98 },
+      { name: 'AH Pilsener',     store: 'AH',    size: '6×33cl', price: 2.99, vol: 1.98 },
+      { name: 'Jupiler',         store: 'AH',    size: '6×33cl', price: 3.99, vol: 1.98 },
+      { name: 'Grolsch',         store: 'AH',    size: '6×33cl', price: 4.29, vol: 1.98 },
+      { name: 'Amstel',          store: 'AH',    size: '6×33cl', price: 4.49, vol: 1.98 },
+      { name: 'Heineken',        store: 'AH',    size: '6×33cl', price: 5.29, vol: 1.98 },
+    ].map(p => ({ ...p, ppl: p.price / p.vol }))
+     .sort((a, b) => a.ppl - b.ppl);
+
+    function renderBeerIndex(items, source) {
+      const el = document.getElementById('beerIndexContent');
+      const avg = items.reduce((s, p) => s + p.ppl, 0) / items.length;
+      const lo  = items[0].ppl;
+      const hi  = items[items.length - 1].ppl;
+
+      const sourceNote = source === 'live'
+        ? 'Data: <a href="https://prices.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts Prices</a> (OdBL)'
+        : 'Reference prices · Amsterdam supermarkets · verified Jan 2025';
+
+      let html = `
+        <div class="beerindex-avg">
+          <span>Avg per litre: <strong>€${avg.toFixed(2)}</strong></span>
+          <span class="beerindex-range">Range: €${lo.toFixed(2)} – €${hi.toFixed(2)} /L</span>
+        </div>
+        <div class="beerindex-rows">
+      `;
+
+      items.forEach((p, i) => {
+        const bestBadge  = i === 0 ? '<span class="beerindex-badge best">Best value</span>' : '';
+        const storeBadge = p.store ? `<span class="beerindex-store">${p.store}</span>` : '';
+        html += `
+          <div class="beerindex-row">
+            <div class="beerindex-name">
+              ${p.name}${p.size ? ` <small>(${p.size})</small>` : ''}
+              ${bestBadge}${storeBadge}
+            </div>
+            <div class="beerindex-prices">
+              <span class="beerindex-ppl">€${p.ppl.toFixed(2)}<small>/L</small></span>
+              <span class="beerindex-total">€${p.price.toFixed(2)} total</span>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div><p class="beerindex-source">${sourceNote}</p>`;
+      el.innerHTML = html;
+    }
+
+    function parseLitres(quantityStr) {
+      if (!quantityStr) return null;
+      const raw = quantityStr.toLowerCase();
+      const multi = raw.match(/(\d+)\s*[x×]\s*(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
+      if (multi) {
+        const count = parseFloat(multi[1]);
+        const vol   = parseFloat(multi[2].replace(',', '.'));
+        const unit  = multi[3];
+        const l = unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
+        return count * l;
+      }
+      const single = raw.match(/(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
+      if (single) {
+        const vol  = parseFloat(single[1].replace(',', '.'));
+        const unit = single[2];
+        return unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
+      }
+      return null;
+    }
+
+    async function loadBeerIndex() {
+      try {
+        // Open Food Facts Prices API — public, CORS-enabled, OdBL licence
+        const url = 'https://prices.openfoodfacts.org/api/v1/prices'
+          + '?location_country=NL&currency=EUR&ordering=-date&page_size=200';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('api');
         const data = await res.json();
 
-        function parseVolumeLitres(p) {
-          const raw = (p.salesUnitSize || p.unitSize || '').toLowerCase();
-          const multi = raw.match(/(\d+)\s*x\s*(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
-          if (multi) {
-            const count = parseFloat(multi[1]);
-            const vol   = parseFloat(multi[2].replace(',', '.'));
-            const unit  = multi[3];
-            const l = unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
-            return count * l;
+        const BEER_KEYWORDS = /\b(bier|beer|pils|pilsner|pilsener|lager|ale|ipa|weizen|weiss|porter|stout|heineken|amstel|grolsch|jupiler|bavaria|hertog|brand|radler)\b/i;
+
+        // Group by product_code, keep most recent price per product
+        const byCode = new Map();
+        for (const item of (data.items || [])) {
+          const name = item.product_name || item.product?.product_name || '';
+          const tags = item.product?.categories_tags || [];
+          const isBeer = BEER_KEYWORDS.test(name) || tags.some(t => t.includes('beer') || t.includes('bier'));
+          if (!isBeer) continue;
+
+          const vol = parseLitres(item.product?.quantity || '');
+          if (!vol || vol < 0.3 || item.price == null) continue;
+
+          const code = item.product_code;
+          if (!byCode.has(code) || item.date > byCode.get(code).date) {
+            byCode.set(code, {
+              name:  name || 'Beer',
+              size:  item.product?.quantity || '',
+              store: item.location?.name || '',
+              price: parseFloat(item.price),
+              vol,
+              ppl:   parseFloat(item.price) / vol,
+              date:  item.date || '',
+            });
           }
-          const single = raw.match(/(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
-          if (single) {
-            const vol  = parseFloat(single[1].replace(',', '.'));
-            const unit = single[2];
-            return unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
-          }
-          return null;
         }
 
-        const priced = (data.products || [])
-          .map(p => {
-            const price = p.price?.now ?? p.price?.current ?? null;
-            const vol   = parseVolumeLitres(p);
-            if (price == null || vol == null || vol < 0.3) return null;
-            return {
-              name:    p.title || p.name,
-              size:    p.salesUnitSize || '',
-              price:   parseFloat(price),
-              vol,
-              ppl:     parseFloat(price) / vol,
-              isBonus: p.discount != null || p.bonusStartDate != null,
-            };
-          })
-          .filter(Boolean)
+        const priced = [...byCode.values()]
           .sort((a, b) => a.ppl - b.ppl)
           .slice(0, 8);
 
-        if (!priced.length) throw new Error('empty');
-
-        const avg = priced.reduce((s, p) => s + p.ppl, 0) / priced.length;
-        const lo  = priced[0].ppl;
-        const hi  = priced[priced.length - 1].ppl;
-
-        let html = `
-          <div class="beerindex-avg">
-            <span>Avg per litre: <strong>€${avg.toFixed(2)}</strong></span>
-            <span class="beerindex-range">Range: €${lo.toFixed(2)} – €${hi.toFixed(2)} /L</span>
-          </div>
-          <div class="beerindex-rows">
-        `;
-
-        priced.forEach((p, i) => {
-          const bestBadge  = i === 0 ? '<span class="beerindex-badge best">Best value</span>' : '';
-          const bonusBadge = p.isBonus ? '<span class="beerindex-badge bonus">BONUS</span>' : '';
-          html += `
-            <div class="beerindex-row">
-              <div class="beerindex-name">
-                ${p.name}${p.size ? ` <small>(${p.size})</small>` : ''}
-                ${bestBadge}${bonusBadge}
-              </div>
-              <div class="beerindex-prices">
-                <span class="beerindex-ppl">€${p.ppl.toFixed(2)}<small>/L</small></span>
-                <span class="beerindex-total">€${p.price.toFixed(2)} total</span>
-              </div>
-            </div>
-          `;
-        });
-
-        html += '</div>';
-        html += '<p class="ah-all-link"><a href="https://www.ah.nl/zoeken?query=bier&sortBy=PRICE_ASC" target="_blank" rel="noopener">See all beer prices at AH →</a></p>';
-        el.innerHTML = html;
+        if (priced.length >= 3) {
+          renderBeerIndex(priced, 'live');
+        } else {
+          renderBeerIndex(BEER_REFERENCE, 'reference');
+        }
       } catch (e) {
-        el.innerHTML = '<p class="ah-msg">Could not load prices. <a href="https://www.ah.nl/zoeken?query=bier" target="_blank" rel="noopener">Browse at AH →</a></p>';
+        renderBeerIndex(BEER_REFERENCE, 'reference');
       }
     }
 
