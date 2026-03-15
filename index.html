@@ -38,6 +38,26 @@
     .coin-wrapper {
       perspective: 800px;
       margin-bottom: 36px;
+      position: relative;
+    }
+
+    .coin-emoji-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+      z-index: 10;
+    }
+
+    .coin-emoji-overlay.visible {
+      opacity: 1;
+      transform: scale(1);
     }
 
     .coin {
@@ -234,9 +254,10 @@
 
   <div class="coin-wrapper">
     <div class="coin" id="coin">
-      <div class="coin-face coin-heads" id="faceHeads"></div>
-      <div class="coin-face coin-tails" id="faceTails"></div>
+      <div class="coin-face coin-heads"></div>
+      <div class="coin-face coin-tails"></div>
     </div>
+    <div class="coin-emoji-overlay" id="coinEmoji"></div>
   </div>
 
   <div class="result" id="result"></div>
@@ -262,10 +283,9 @@
     /* ── Coin flip ── */
     let bbqCount = 0, noCount = 0, spinning = false;
 
-    const coin      = document.getElementById('coin');
-    const faceHeads = document.getElementById('faceHeads');
-    const faceTails = document.getElementById('faceTails');
-    const result    = document.getElementById('result');
+    const coin       = document.getElementById('coin');
+    const coinEmoji  = document.getElementById('coinEmoji');
+    const result     = document.getElementById('result');
     const resultSub = document.getElementById('result-sub');
     const flipBtn   = document.getElementById('flipBtn');
 
@@ -302,8 +322,8 @@
       result.textContent = '';
       result.className = 'result';
       resultSub.textContent = '';
-      faceHeads.textContent = '';
-      faceTails.textContent = '';
+      coinEmoji.textContent = '';
+      coinEmoji.classList.remove('visible');
 
       const isBBQ = Math.random() < 0.5;
       const totalSpins = 18 + Math.floor(Math.random() * 10);
@@ -325,8 +345,8 @@
 
           setTimeout(() => {
             coin.style.transition = '';
-            if (isBBQ) faceHeads.textContent = '🍖';
-            else        faceTails.textContent = '🏠';
+            coinEmoji.textContent = isBBQ ? '🍖' : '🏠';
+            coinEmoji.classList.add('visible');
             showResult(isBBQ);
           }, 450);
         }
