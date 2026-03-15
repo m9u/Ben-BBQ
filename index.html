@@ -681,6 +681,109 @@
       color: #888;
     }
 
+    /* ── Beer Price Index ── */
+    .beerindex-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .beerindex-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .beerindex-subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .beerindex-avg {
+      background: rgba(255,107,53,0.1);
+      border: 1px solid rgba(255,107,53,0.25);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      font-size: 0.9rem;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .beerindex-avg strong { color: #ff6b35; font-size: 1.1rem; }
+
+    .beerindex-range {
+      font-size: 0.75rem;
+      color: #777;
+    }
+
+    .beerindex-row {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 9px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .beerindex-row:first-child { border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.07); }
+
+    .beerindex-name {
+      font-size: 0.85rem;
+      color: #ddd;
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .beerindex-name small { color: #888; font-size: 0.72rem; }
+
+    .beerindex-prices {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .beerindex-ppl {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.92rem;
+    }
+
+    .beerindex-ppl small { font-weight: 400; color: #888; font-size: 0.72rem; }
+
+    .beerindex-total {
+      display: block;
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 1px;
+    }
+
+    .beerindex-badge {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      letter-spacing: 0.4px;
+      vertical-align: middle;
+    }
+
+    .beerindex-badge.best { background: #4ade80; color: #000; }
+    .beerindex-badge.bonus { background: #00a0e2; color: #fff; }
+
     /* ── Live Radar ── */
     .radar-section {
       margin-top: 48px;
@@ -833,6 +936,15 @@
     <p class="radar-credit">
       Interactive weather map by <a href="https://www.windy.com" target="_blank" rel="noopener">windy.com</a>
     </p>
+  </section>
+
+  <!-- Beer Price Index -->
+  <section class="beerindex-section">
+    <div class="beerindex-title">🍺 Beer Price Index</div>
+    <div class="beerindex-subtitle">Live supermarket prices · sorted by cost per litre · Albert Heijn Amsterdam</div>
+    <div id="beerIndexContent">
+      <div class="ah-msg">Loading prices...</div>
+    </div>
   </section>
 
   <!-- Albert Heijn Deals -->
@@ -1492,6 +1604,102 @@
     }
 
     loadAHDeals();
+
+    /* ── Beer Price Index ── */
+    async function loadBeerIndex() {
+      const el = document.getElementById('beerIndexContent');
+      try {
+        const tokenRes = await fetch('https://api.ah.nl/mobile-auth/v1/auth/token/anonymous', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'appie' })
+        });
+        if (!tokenRes.ok) throw new Error('token');
+        const { access_token } = await tokenRes.json();
+
+        const res = await fetch('https://api.ah.nl/mobile-services/product/search/v2?query=bier&sortOn=PRICE&size=40', {
+          headers: { 'Authorization': `Bearer ${access_token}` }
+        });
+        if (!res.ok) throw new Error('search');
+        const data = await res.json();
+
+        function parseVolumeLitres(p) {
+          const raw = (p.salesUnitSize || p.unitSize || '').toLowerCase();
+          const multi = raw.match(/(\d+)\s*x\s*(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
+          if (multi) {
+            const count = parseFloat(multi[1]);
+            const vol   = parseFloat(multi[2].replace(',', '.'));
+            const unit  = multi[3];
+            const l = unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
+            return count * l;
+          }
+          const single = raw.match(/(\d+[.,]?\d*)\s*(ml|cl|l)\b/);
+          if (single) {
+            const vol  = parseFloat(single[1].replace(',', '.'));
+            const unit = single[2];
+            return unit === 'l' ? vol : unit === 'cl' ? vol / 100 : vol / 1000;
+          }
+          return null;
+        }
+
+        const priced = (data.products || [])
+          .map(p => {
+            const price = p.price?.now ?? p.price?.current ?? null;
+            const vol   = parseVolumeLitres(p);
+            if (price == null || vol == null || vol < 0.3) return null;
+            return {
+              name:    p.title || p.name,
+              size:    p.salesUnitSize || '',
+              price:   parseFloat(price),
+              vol,
+              ppl:     parseFloat(price) / vol,
+              isBonus: p.discount != null || p.bonusStartDate != null,
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.ppl - b.ppl)
+          .slice(0, 8);
+
+        if (!priced.length) throw new Error('empty');
+
+        const avg = priced.reduce((s, p) => s + p.ppl, 0) / priced.length;
+        const lo  = priced[0].ppl;
+        const hi  = priced[priced.length - 1].ppl;
+
+        let html = `
+          <div class="beerindex-avg">
+            <span>Avg per litre: <strong>€${avg.toFixed(2)}</strong></span>
+            <span class="beerindex-range">Range: €${lo.toFixed(2)} – €${hi.toFixed(2)} /L</span>
+          </div>
+          <div class="beerindex-rows">
+        `;
+
+        priced.forEach((p, i) => {
+          const bestBadge  = i === 0 ? '<span class="beerindex-badge best">Best value</span>' : '';
+          const bonusBadge = p.isBonus ? '<span class="beerindex-badge bonus">BONUS</span>' : '';
+          html += `
+            <div class="beerindex-row">
+              <div class="beerindex-name">
+                ${p.name}${p.size ? ` <small>(${p.size})</small>` : ''}
+                ${bestBadge}${bonusBadge}
+              </div>
+              <div class="beerindex-prices">
+                <span class="beerindex-ppl">€${p.ppl.toFixed(2)}<small>/L</small></span>
+                <span class="beerindex-total">€${p.price.toFixed(2)} total</span>
+              </div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+        html += '<p class="ah-all-link"><a href="https://www.ah.nl/zoeken?query=bier&sortBy=PRICE_ASC" target="_blank" rel="noopener">See all beer prices at AH →</a></p>';
+        el.innerHTML = html;
+      } catch (e) {
+        el.innerHTML = '<p class="ah-msg">Could not load prices. <a href="https://www.ah.nl/zoeken?query=bier" target="_blank" rel="noopener">Browse at AH →</a></p>';
+      }
+    }
+
+    loadBeerIndex();
 
   </script>
 </body>
