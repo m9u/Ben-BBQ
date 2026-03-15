@@ -398,6 +398,176 @@
       font-weight: 600;
     }
 
+    .timer-start-btn {
+      margin-top: 14px;
+      width: 100%;
+      padding: 11px 24px;
+      background: rgba(255,107,53,0.12);
+      color: #ff8c5a;
+      border: 1px solid rgba(255,107,53,0.35);
+      border-radius: 24px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .timer-start-btn:hover { background: rgba(255,107,53,0.22); }
+
+    /* ── Timer overlay ── */
+    .timer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 8, 18, 0.93);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .timer-modal {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 28px;
+      padding: 32px 28px 28px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .timer-meta {
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .timer-side-lbl {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ddd;
+      margin-bottom: 22px;
+      min-height: 1.6rem;
+    }
+
+    .timer-ring-wrap {
+      position: relative;
+      width: 190px;
+      height: 190px;
+      margin: 0 auto 24px;
+    }
+
+    .timer-ring-wrap svg {
+      width: 190px;
+      height: 190px;
+      transform: rotate(-90deg);
+    }
+
+    .timer-ring-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.06);
+      stroke-width: 9;
+    }
+
+    .timer-ring-prog {
+      fill: none;
+      stroke: #ff6b35;
+      stroke-width: 9;
+      stroke-linecap: round;
+      stroke-dasharray: 314;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.25s linear, stroke 0.4s;
+    }
+
+    .timer-ring-prog.urgent { stroke: #ff3030; }
+
+    .timer-digits {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .timer-flip-view {
+      display: none;
+      animation: tfadeIn 0.35s ease-out;
+      margin-bottom: 4px;
+    }
+
+    .timer-flip-view.show { display: block; }
+
+    .timer-flip-emoji {
+      font-size: 80px;
+      display: block;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .timer-flip-emoji.spin {
+      animation: tflip 0.5s ease-out;
+    }
+
+    .timer-flip-word {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
+
+    .timer-flip-word.is-flip { color: #ff6b35; }
+    .timer-flip-word.is-done { color: #4ade80; }
+
+    @keyframes tfadeIn {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    @keyframes tflip {
+      0%   { transform: rotateY(0deg)   scale(1); }
+      50%  { transform: rotateY(180deg) scale(1.2); }
+      100% { transform: rotateY(360deg) scale(1); }
+    }
+
+    .timer-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .timer-next-btn {
+      padding: 12px 26px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
+    }
+
+    .timer-next-btn.show { display: block; }
+
+    .timer-close-btn {
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.06);
+      color: #888;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .timer-close-btn:hover { background: rgba(255,255,255,0.1); color: #ccc; }
+
     /* ── AH Deals ── */
     .ah-section {
       margin-top: 48px;
@@ -676,6 +846,34 @@
     </div>
   </section>
 
+  <!-- Timer overlay -->
+  <div class="timer-overlay" id="timerOverlay" style="display:none">
+    <div class="timer-modal">
+      <div class="timer-meta" id="timerMeta"></div>
+      <div class="timer-side-lbl" id="timerSideLbl"></div>
+
+      <div id="timerCountView">
+        <div class="timer-ring-wrap">
+          <svg viewBox="0 0 120 120">
+            <circle class="timer-ring-bg"   cx="60" cy="60" r="50"/>
+            <circle class="timer-ring-prog" cx="60" cy="60" r="50" id="timerRing"/>
+          </svg>
+          <div class="timer-digits" id="timerDigits">0:00</div>
+        </div>
+      </div>
+
+      <div class="timer-flip-view" id="timerFlipView">
+        <span class="timer-flip-emoji" id="timerFlipEmoji"></span>
+        <div class="timer-flip-word" id="timerFlipWord"></div>
+      </div>
+
+      <div class="timer-btns">
+        <button class="timer-next-btn" id="timerNextBtn" onclick="timerAdvance()"></button>
+        <button class="timer-close-btn" onclick="timerStop()">✕ Stop</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* ── Coin flip ── */
     let bbqCount = 0, noCount = 0, spinning = false;
@@ -916,8 +1114,12 @@
       calculate();
     }
 
+    let pendingTimer = null;
+    const timerBtn = '<button class="timer-start-btn" onclick="timerStart()">⏱ Start Timer</button>';
+
     function calculate() {
       const el = document.getElementById('calcResult');
+      pendingTimer = null;
       if (!selMeat || !selCut) {
         el.innerHTML = '<div class="calc-result-empty">Select meat and cut above</div>';
         return;
@@ -925,9 +1127,12 @@
       const cut = CALC_DATA[selMeat].cuts[selCut];
       const grams = Math.max(50, Math.min(1500, parseInt(document.getElementById('weightInput').value) || 200));
       const safetyNote = cut.safety ? '<div class="calc-safety">⚠️ Always verify internal temp reaches 74°C — never guess with chicken.</div>' : '';
+      const emoji = CALC_DATA[selMeat].emoji;
+      const baseLabel = CALC_DATA[selMeat].label + ' · ' + cut.label;
 
       if (cut.fixed) {
         const tempStr = cut.temp.target ? `${cut.temp.target}°C internal` : '';
+        pendingTimer = { secs: cut.fixed.totalMin * 60, sides: 1, isTurn: false, emoji, label: baseLabel, doneness: '' };
         el.innerHTML = `<div class="calc-result-card">
           <div class="calc-result-top">
             <div class="calc-time-block">
@@ -941,12 +1146,14 @@
           </div>
           <div class="calc-tip">💡 ${cut.tip}</div>
           ${safetyNote}
+          ${timerBtn}
         </div>`;
         return;
       }
 
       if (cut.sausageMode) {
         const t = interp(cut.weights, grams);
+        pendingTimer = { secs: Math.round(rh(t.turn) * 60), sides: 4, isTurn: true, emoji, label: baseLabel, doneness: '' };
         el.innerHTML = `<div class="calc-result-card">
           <div class="calc-result-top">
             <div class="calc-time-block">
@@ -959,6 +1166,7 @@
             </div>
           </div>
           <div class="calc-tip">💡 ${cut.tip}</div>
+          ${timerBtn}
         </div>`;
         return;
       }
@@ -968,6 +1176,7 @@
         const time = t[selDoneness];
         const dn = DONENESS.find(d => d.key === selDoneness);
         const temp = cut.temp[selDoneness];
+        pendingTimer = { secs: Math.round(rh(time) * 60), sides: 2, isTurn: false, emoji, label: baseLabel, doneness: dn.label };
         el.innerHTML = `<div class="calc-result-card">
           <div class="calc-result-top">
             <div class="calc-time-block">
@@ -981,12 +1190,14 @@
           </div>
           <div class="calc-tip">💡 ${cut.tip}</div>
           ${safetyNote}
+          ${timerBtn}
         </div>`;
         return;
       }
 
       // Simple per-side
       const t = interp(cut.weights, grams);
+      pendingTimer = { secs: Math.round(rh(t.ps) * 60), sides: 2, isTurn: false, emoji, label: baseLabel, doneness: '' };
       el.innerHTML = `<div class="calc-result-card">
         <div class="calc-result-top">
           <div class="calc-time-block">
@@ -1000,10 +1211,123 @@
         </div>
         <div class="calc-tip">💡 ${cut.tip}</div>
         ${safetyNote}
+        ${timerBtn}
       </div>`;
     }
 
     buildMeatPills();
+
+    /* ── BBQ Timer ── */
+    let timerState = null;
+    const CIRC = 314; // 2π × r50
+
+    function beep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.6);
+      } catch(e) {}
+    }
+
+    function timerStart() {
+      if (!pendingTimer) return;
+      const p = pendingTimer;
+      timerState = {
+        secsEach: Array(p.sides).fill(p.secs),
+        current: 0,
+        isTurn: p.isTurn,
+        emoji: p.emoji,
+        label: p.label,
+        doneness: p.doneness,
+        interval: null,
+        endTime: 0,
+        totalSecs: p.secs,
+      };
+      document.getElementById('timerOverlay').style.display = 'flex';
+      timerBeginSide();
+    }
+
+    function timerBeginSide() {
+      const s = timerState;
+      const word = s.isTurn ? 'Turn' : 'Side';
+      const total = s.secsEach.length;
+      document.getElementById('timerMeta').textContent = s.label + (s.doneness ? ' · ' + s.doneness : '');
+      document.getElementById('timerSideLbl').textContent = total === 1 ? 'Total time' : `${word} ${s.current + 1} of ${total}`;
+      document.getElementById('timerCountView').style.display = '';
+      document.getElementById('timerFlipView').classList.remove('show');
+      document.getElementById('timerNextBtn').classList.remove('show');
+      document.getElementById('timerRing').style.strokeDashoffset = '0';
+      document.getElementById('timerRing').classList.remove('urgent');
+
+      s.endTime = Date.now() + s.secsEach[s.current] * 1000;
+      s.totalSecs = s.secsEach[s.current];
+      clearInterval(s.interval);
+      s.interval = setInterval(timerTick, 250);
+      timerTick();
+    }
+
+    function timerTick() {
+      const s = timerState;
+      const remaining = Math.max(0, s.endTime - Date.now());
+      const secs = Math.ceil(remaining / 1000);
+      const mins = Math.floor(secs / 60);
+      document.getElementById('timerDigits').textContent = mins + ':' + String(secs % 60).padStart(2, '0');
+      const frac = remaining / (s.totalSecs * 1000);
+      document.getElementById('timerRing').style.strokeDashoffset = String(CIRC * (1 - frac));
+      if (secs <= 10) document.getElementById('timerRing').classList.add('urgent');
+      if (remaining <= 0) { clearInterval(s.interval); timerDing(); }
+    }
+
+    function timerDing() {
+      const s = timerState;
+      const isLast = s.current >= s.secsEach.length - 1;
+      const word = s.isTurn ? 'Turn' : 'Side';
+
+      beep();
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+
+      document.getElementById('timerCountView').style.display = 'none';
+      const flipView = document.getElementById('timerFlipView');
+      const emojiEl  = document.getElementById('timerFlipEmoji');
+      const wordEl   = document.getElementById('timerFlipWord');
+      const nextBtn  = document.getElementById('timerNextBtn');
+
+      emojiEl.textContent = s.emoji;
+      emojiEl.classList.remove('spin');
+      void emojiEl.offsetWidth; // force reflow to restart animation
+      emojiEl.classList.add('spin');
+
+      if (isLast) {
+        document.getElementById('timerSideLbl').textContent = 'Off the grill! 🎉';
+        wordEl.textContent = 'DONE!';
+        wordEl.className = 'timer-flip-word is-done';
+        nextBtn.classList.remove('show');
+      } else {
+        document.getElementById('timerSideLbl').textContent = 'Time to flip!';
+        wordEl.textContent = 'FLIP!';
+        wordEl.className = 'timer-flip-word is-flip';
+        nextBtn.textContent = `▶ Start ${word} ${s.current + 2}`;
+        nextBtn.classList.add('show');
+      }
+      flipView.classList.add('show');
+    }
+
+    function timerAdvance() {
+      timerState.current++;
+      timerBeginSide();
+    }
+
+    function timerStop() {
+      if (timerState) { clearInterval(timerState.interval); timerState = null; }
+      document.getElementById('timerOverlay').style.display = 'none';
+    }
 
     /* ── Amsterdam Weather (Open-Meteo, no API key needed) ── */
     const WMO = {
