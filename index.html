@@ -336,6 +336,81 @@
       color: #888;
     }
 
+    /* ── Live Radar ── */
+    .radar-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .radar-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .radar-subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .radar-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .radar-tab {
+      padding: 6px 18px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .radar-tab.active {
+      background: rgba(255,107,53,0.25);
+      border-color: rgba(255,107,53,0.5);
+      color: #fff;
+    }
+
+    .radar-tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #ddd; }
+
+    .radar-frame-wrap {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: #000;
+      display: flex;
+      justify-content: center;
+    }
+
+    .radar-frame-wrap iframe {
+      display: block;
+      border: 0;
+      width: 100%;
+    }
+
+    .radar-credit {
+      text-align: center;
+      font-size: 0.72rem;
+      color: #555;
+      margin-top: 8px;
+    }
+
+    .radar-credit a { color: #666; text-decoration: none; }
+    .radar-credit a:hover { text-decoration: underline; }
+
     /* ── Particles ── */
     .particles {
       position: fixed;
@@ -401,6 +476,27 @@
     <div id="ahDealsGrid">
       <div class="ah-msg">Checking for coal &amp; beer deals...</div>
     </div>
+  </section>
+
+  <!-- Live Rain Radar -->
+  <section class="radar-section">
+    <div class="radar-title">Live Weather Radar — Amsterdam</div>
+    <div class="radar-subtitle">Is rain coming? Check before you fire up the grill.</div>
+    <div class="radar-tabs">
+      <button class="radar-tab active" onclick="switchRadar('buienradar', this)">🌧 Rain Radar</button>
+      <button class="radar-tab" onclick="switchRadar('windy', this)">💨 Wind &amp; Rain Map</button>
+    </div>
+    <div class="radar-frame-wrap" id="radarWrap">
+      <iframe id="radarFrame"
+        src="https://www.buienradar.nl/?embed=1"
+        height="406"
+        scrolling="no"
+        title="Buienradar live rain radar Amsterdam">
+      </iframe>
+    </div>
+    <p class="radar-credit" id="radarCredit">
+      Live rain radar by <a href="https://www.buienradar.nl" target="_blank" rel="noopener">buienradar.nl</a> — updates every 5 minutes
+    </p>
   </section>
 
   <script>
@@ -659,6 +755,29 @@
     }
 
     loadAHDeals();
+
+    /* ── Live Radar tab switcher ── */
+    const RADAR_SOURCES = {
+      buienradar: {
+        src: 'https://www.buienradar.nl/?embed=1',
+        height: '406',
+        credit: 'Live rain radar by <a href="https://www.buienradar.nl" target="_blank" rel="noopener">buienradar.nl</a> — updates every 5 minutes'
+      },
+      windy: {
+        src: 'https://embed.windy.com/embed2.html?lat=52.374&lon=4.890&zoom=10&level=surface&overlay=rain&product=ecmwf&menu=&message=true&metricTemp=%C2%B0C&metricWind=km%2Fh',
+        height: '450',
+        credit: 'Interactive weather map by <a href="https://www.windy.com" target="_blank" rel="noopener">windy.com</a>'
+      }
+    };
+
+    function switchRadar(key, btn) {
+      const s = RADAR_SOURCES[key];
+      document.getElementById('radarFrame').src = s.src;
+      document.getElementById('radarFrame').height = s.height;
+      document.getElementById('radarCredit').innerHTML = s.credit;
+      document.querySelectorAll('.radar-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+    }
   </script>
 </body>
 </html>
