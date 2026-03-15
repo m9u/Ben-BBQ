@@ -234,8 +234,8 @@
 
   <div class="coin-wrapper">
     <div class="coin" id="coin">
-      <div class="coin-face coin-heads">&#x1F356;</div>
-      <div class="coin-face coin-tails">&#x1F614;</div>
+      <div class="coin-face coin-heads" id="faceHeads"></div>
+      <div class="coin-face coin-tails" id="faceTails"></div>
     </div>
   </div>
 
@@ -263,6 +263,8 @@
     let bbqCount = 0, noCount = 0, spinning = false;
 
     const coin      = document.getElementById('coin');
+    const faceHeads = document.getElementById('faceHeads');
+    const faceTails = document.getElementById('faceTails');
     const result    = document.getElementById('result');
     const resultSub = document.getElementById('result-sub');
     const flipBtn   = document.getElementById('flipBtn');
@@ -300,6 +302,8 @@
       result.textContent = '';
       result.className = 'result';
       resultSub.textContent = '';
+      faceHeads.textContent = '';
+      faceTails.textContent = '';
 
       const isBBQ = Math.random() < 0.5;
       const totalSpins = 18 + Math.floor(Math.random() * 10);
@@ -321,6 +325,8 @@
 
           setTimeout(() => {
             coin.style.transition = '';
+            faceHeads.textContent = '🍖';
+            faceTails.textContent = '🏠';
             showResult(isBBQ);
           }, 450);
         }
