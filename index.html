@@ -223,6 +223,181 @@
       padding: 20px 0;
     }
 
+    /* ── BBQ Calculator ── */
+    .calc-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .calc-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .calc-step { margin-bottom: 18px; }
+
+    .calc-step-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .calc-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .calc-pill {
+      padding: 8px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      background: rgba(255,255,255,0.05);
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .calc-pill:hover { background: rgba(255,255,255,0.1); color: #ddd; }
+
+    .calc-pill.active {
+      background: rgba(255,107,53,0.2);
+      border-color: rgba(255,107,53,0.6);
+      color: #ff8c5a;
+    }
+
+    .calc-weight-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .calc-weight-row button {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07);
+      color: #ccc;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s;
+      flex-shrink: 0;
+    }
+
+    .calc-weight-row button:hover { background: rgba(255,255,255,0.14); }
+
+    .calc-weight-row input[type=number] {
+      width: 90px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .calc-weight-row input[type=number]::-webkit-inner-spin-button { display: none; }
+
+    .calc-weight-unit {
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    .calc-result {
+      margin-top: 22px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .calc-result-empty {
+      text-align: center;
+      color: #555;
+      font-size: 0.9rem;
+      padding: 20px;
+      border: 1px dashed rgba(255,255,255,0.08);
+      border-radius: 16px;
+    }
+
+    .calc-result-card {
+      background: rgba(255,107,53,0.08);
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: 16px;
+      padding: 20px 22px;
+    }
+
+    .calc-result-top {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 14px;
+    }
+
+    .calc-time-block {
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .calc-time-big {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #ff8c5a;
+      line-height: 1;
+    }
+
+    .calc-time-label {
+      font-size: 0.7rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 3px;
+    }
+
+    .calc-result-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .calc-detail {
+      font-size: 0.83rem;
+      color: #bbb;
+      line-height: 1.4;
+    }
+
+    .calc-detail strong { color: #eee; }
+
+    .calc-tip {
+      font-size: 0.8rem;
+      color: #888;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 12px;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .calc-safety {
+      font-size: 0.78rem;
+      color: #f7931e;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
     /* ── AH Deals ── */
     .ah-section {
       margin-top: 48px;
@@ -432,6 +607,40 @@
     <span>Flips: <strong id="totalCount">0</strong></span>
   </div>
 
+  <!-- BBQ Calculator -->
+  <section class="calc-section">
+    <div class="calc-title">BBQ Cooking Calculator 🔥</div>
+
+    <div class="calc-step">
+      <div class="calc-step-label">Meat</div>
+      <div class="calc-pills" id="meatPills"></div>
+    </div>
+
+    <div class="calc-step" id="cutStep" style="display:none">
+      <div class="calc-step-label">Cut</div>
+      <div class="calc-pills" id="cutPills"></div>
+    </div>
+
+    <div class="calc-step" id="weightStep" style="display:none">
+      <div class="calc-step-label">Weight</div>
+      <div class="calc-weight-row">
+        <button onclick="adjustWeight(-50)">−</button>
+        <input type="number" id="weightInput" value="200" min="50" max="1500" oninput="calculate()" />
+        <span class="calc-weight-unit">grams</span>
+        <button onclick="adjustWeight(+50)">+</button>
+      </div>
+    </div>
+
+    <div class="calc-step" id="donenessStep" style="display:none">
+      <div class="calc-step-label">Doneness</div>
+      <div class="calc-pills" id="donenessPills"></div>
+    </div>
+
+    <div class="calc-result" id="calcResult">
+      <div class="calc-result-empty">Select meat and cut above</div>
+    </div>
+  </section>
+
   <!-- Weather -->
   <section class="weather-section">
     <div class="weather-title">Amsterdam Weather This Week</div>
@@ -559,6 +768,242 @@
       spawnParticles(isBBQ);
       setTimeout(() => { spinning = false; flipBtn.disabled = false; }, 300);
     }
+
+    /* ── BBQ Calculator ── */
+    // All times in minutes per side at medium-high direct heat (~220°C / 430°F)
+    // Weight breakpoints: [grams, timings]
+    const CALC_DATA = {
+      beef: { label: 'Beef', emoji: '🥩', cuts: {
+        burger: { label: 'Burger Patty', hasDoneness: true, sides: 2,
+          weights: [[80,{r:2,mr:2.5,m:3.5,w:5}],[120,{r:2.5,mr:3,m:4,w:5.5}],[150,{r:3,mr:3.5,m:4.5,w:6}],[200,{r:3.5,mr:4.5,m:5.5,w:7.5}]],
+          temp: {r:52,mr:57,m:63,w:71}, tip: "Don't press the patty. Flip once. Rest 2 min before eating." },
+        steak: { label: 'Steak', hasDoneness: true, sides: 2,
+          weights: [[130,{r:1.5,mr:2,m:3,w:4.5}],[180,{r:2,mr:2.5,m:4,w:5.5}],[250,{r:2.5,mr:3.5,m:5,w:7}],[350,{r:3,mr:4.5,m:6.5,w:9}],[450,{r:4,mr:5.5,m:8,w:11}]],
+          temp: {r:52,mr:57,m:63,w:71}, tip: "Very high heat. Flip once. Rest for at least half the cook time." },
+        ribs: { label: 'Ribs', hasDoneness: false, sides: null,
+          fixed: { desc: 'Indirect 90–120 min, then sear 3 min/side', totalMin: 96, totalMax: 126 },
+          temp: { target: 88 }, tip: "Wrap in foil for the first 60 min to keep moist. Unwrap and glaze for the last 30 min." },
+      }},
+      pork: { label: 'Pork', emoji: '🐷', cuts: {
+        sausage: { label: 'Sausage / Bratwurst', hasDoneness: false, sides: 4, sausageMode: true,
+          weights: [[70,{turn:2.5}],[100,{turn:3}],[150,{turn:4}],[200,{turn:5}]],
+          temp: { target: 71 }, tip: "Medium heat. Turn every few minutes for even browning. Never pierce the skin." },
+        chop: { label: 'Pork Chop', hasDoneness: false, sides: 2,
+          weights: [[120,{ps:4}],[180,{ps:5.5}],[250,{ps:7}],[320,{ps:8.5}]],
+          temp: { target: 63 }, tip: "Medium-high heat. Rest 3 min. Slightly pink inside is safe at 63°C." },
+        ribs: { label: 'Spare Ribs', hasDoneness: false, sides: null,
+          fixed: { desc: 'Indirect 2–3 hours, then sear 5 min/side', totalMin: 125, totalMax: 185 },
+          temp: { target: 88 }, tip: "Low and slow. The meat should pull back from the bone ~1 cm when done." },
+      }},
+      chicken: { label: 'Chicken', emoji: '🍗', cuts: {
+        breast: { label: 'Breast', hasDoneness: false, sides: 2, safety: true,
+          weights: [[120,{ps:6}],[160,{ps:7.5}],[200,{ps:9}],[250,{ps:11}],[300,{ps:13}]],
+          temp: { target: 74 }, tip: "Medium heat. Butterfly if over 220g for even cooking. Always verify 74°C internal temp." },
+        thigh_boneless: { label: 'Thigh (boneless)', hasDoneness: false, sides: 2, safety: true,
+          weights: [[80,{ps:5}],[120,{ps:6.5}],[160,{ps:8}],[200,{ps:10}]],
+          temp: { target: 74 }, tip: "More forgiving than breast — higher fat keeps it juicy. Great for BBQ." },
+        drumstick: { label: 'Drumstick', hasDoneness: false, sides: null, safety: true,
+          fixed: { desc: 'Indirect 25 min, then direct 3–4 min/side', totalMin: 31, totalMax: 33 },
+          temp: { target: 74 }, tip: "Start indirect, finish on direct heat for crispy skin. Always check 74°C." },
+        wing: { label: 'Wings', hasDoneness: false, sides: null, safety: true,
+          fixed: { desc: 'Direct heat, turn every 5 min, total 20–25 min', totalMin: 20, totalMax: 25 },
+          temp: { target: 74 }, tip: "Medium-high heat. Skin gets crispy when fat renders out — be patient." },
+      }},
+      lamb: { label: 'Lamb', emoji: '🐑', cuts: {
+        chop: { label: 'Lamb Chop', hasDoneness: true, sides: 2,
+          weights: [[70,{r:1.5,mr:2,m:3,w:4.5}],[100,{r:2,mr:2.5,m:3.5,w:5}],[130,{r:2.5,mr:3.5,m:4.5,w:6}],[160,{r:3,mr:4,m:5.5,w:7}]],
+          temp: {r:52,mr:57,m:63,w:71}, tip: "High heat. Lamb is best medium-rare. Rest 2 min." },
+        burger: { label: 'Lamb Burger', hasDoneness: true, sides: 2,
+          weights: [[100,{r:2.5,mr:3,m:4,w:5.5}],[150,{r:3,mr:3.5,m:4.5,w:6}],[200,{r:3.5,mr:4.5,m:5.5,w:7}]],
+          temp: {r:55,mr:60,m:65,w:71}, tip: "Add cumin and mint. Don't overwork the mix — keep it loose." },
+      }},
+      fish: { label: 'Fish', emoji: '🐟', cuts: {
+        salmon: { label: 'Salmon Fillet', hasDoneness: false, sides: 2,
+          weights: [[100,{ps:3}],[150,{ps:4}],[200,{ps:5}],[250,{ps:6.5}]],
+          temp: { target: 63 }, tip: "Start skin-side down. Oil grill well. It's ready to flip when it releases easily." },
+        tuna: { label: 'Tuna Steak', hasDoneness: false, sides: 2,
+          weights: [[120,{ps:1.5}],[180,{ps:2}],[250,{ps:2.5}]],
+          temp: { target: 54 }, tip: "Max heat, very fast. Tuna is best seared on the outside, rare inside." },
+        whole: { label: 'Whole Fish', hasDoneness: false, sides: 2,
+          weights: [[300,{ps:5}],[500,{ps:7}],[700,{ps:9}],[1000,{ps:12}]],
+          temp: { target: 63 }, tip: "Score the flesh. Oil well. Use a fish basket if possible. Flesh flakes when done." },
+      }},
+    };
+
+    const DONENESS = [
+      { key: 'r',  label: 'Rare',        tempLabel: '52°C' },
+      { key: 'mr', label: 'Medium Rare', tempLabel: '57°C' },
+      { key: 'm',  label: 'Medium',      tempLabel: '63°C' },
+      { key: 'w',  label: 'Well Done',   tempLabel: '71°C' },
+    ];
+
+    let selMeat = null, selCut = null, selDoneness = 'mr';
+
+    function interp(weights, grams) {
+      if (grams <= weights[0][0]) return { ...weights[0][1] };
+      if (grams >= weights[weights.length-1][0]) return { ...weights[weights.length-1][1] };
+      for (let i = 0; i < weights.length - 1; i++) {
+        const [w1, t1] = weights[i], [w2, t2] = weights[i+1];
+        if (grams >= w1 && grams <= w2) {
+          const r = (grams - w1) / (w2 - w1);
+          const out = {};
+          for (const k of Object.keys(t1)) out[k] = t1[k] + r * (t2[k] - t1[k]);
+          return out;
+        }
+      }
+    }
+
+    function rh(n) { // round to nearest 0.5
+      return Math.round(n * 2) / 2;
+    }
+
+    function fmt(n) {
+      const v = rh(n);
+      return v % 1 === 0 ? v + ' min' : v + ' min';
+    }
+
+    function buildMeatPills() {
+      const el = document.getElementById('meatPills');
+      el.innerHTML = '';
+      for (const [key, data] of Object.entries(CALC_DATA)) {
+        const btn = document.createElement('button');
+        btn.className = 'calc-pill' + (selMeat === key ? ' active' : '');
+        btn.textContent = data.emoji + ' ' + data.label;
+        btn.onclick = () => { selMeat = key; selCut = null; buildMeatPills(); buildCutPills(); calculate(); };
+        el.appendChild(btn);
+      }
+    }
+
+    function buildCutPills() {
+      const cutStep = document.getElementById('cutStep');
+      const el = document.getElementById('cutPills');
+      if (!selMeat) { cutStep.style.display = 'none'; return; }
+      cutStep.style.display = '';
+      el.innerHTML = '';
+      for (const [key, data] of Object.entries(CALC_DATA[selMeat].cuts)) {
+        const btn = document.createElement('button');
+        btn.className = 'calc-pill' + (selCut === key ? ' active' : '');
+        btn.textContent = data.label;
+        btn.onclick = () => { selCut = key; buildCutPills(); buildDonenessRow(); showWeightStep(); calculate(); };
+        el.appendChild(btn);
+      }
+    }
+
+    function buildDonenessRow() {
+      const step = document.getElementById('donenessStep');
+      if (!selMeat || !selCut || !CALC_DATA[selMeat].cuts[selCut].hasDoneness) {
+        step.style.display = 'none'; return;
+      }
+      step.style.display = '';
+      const el = document.getElementById('donenessPills');
+      el.innerHTML = '';
+      DONENESS.forEach(d => {
+        const btn = document.createElement('button');
+        btn.className = 'calc-pill' + (selDoneness === d.key ? ' active' : '');
+        btn.textContent = d.label;
+        btn.onclick = () => { selDoneness = d.key; buildDonenessRow(); calculate(); };
+        el.appendChild(btn);
+      });
+    }
+
+    function showWeightStep() {
+      document.getElementById('weightStep').style.display = selCut ? '' : 'none';
+    }
+
+    function adjustWeight(delta) {
+      const inp = document.getElementById('weightInput');
+      inp.value = Math.max(50, Math.min(1500, (parseInt(inp.value) || 200) + delta));
+      calculate();
+    }
+
+    function calculate() {
+      const el = document.getElementById('calcResult');
+      if (!selMeat || !selCut) {
+        el.innerHTML = '<div class="calc-result-empty">Select meat and cut above</div>';
+        return;
+      }
+      const cut = CALC_DATA[selMeat].cuts[selCut];
+      const grams = Math.max(50, Math.min(1500, parseInt(document.getElementById('weightInput').value) || 200));
+      const safetyNote = cut.safety ? '<div class="calc-safety">⚠️ Always verify internal temp reaches 74°C — never guess with chicken.</div>' : '';
+
+      if (cut.fixed) {
+        const tempStr = cut.temp.target ? `${cut.temp.target}°C internal` : '';
+        el.innerHTML = `<div class="calc-result-card">
+          <div class="calc-result-top">
+            <div class="calc-time-block">
+              <div class="calc-time-big">${cut.fixed.totalMin}–${cut.fixed.totalMax}</div>
+              <div class="calc-time-label">min total</div>
+            </div>
+            <div class="calc-result-details">
+              <div class="calc-detail"><strong>Method:</strong> ${cut.fixed.desc}</div>
+              ${tempStr ? `<div class="calc-detail"><strong>Target:</strong> ${tempStr}</div>` : ''}
+            </div>
+          </div>
+          <div class="calc-tip">💡 ${cut.tip}</div>
+          ${safetyNote}
+        </div>`;
+        return;
+      }
+
+      if (cut.sausageMode) {
+        const t = interp(cut.weights, grams);
+        el.innerHTML = `<div class="calc-result-card">
+          <div class="calc-result-top">
+            <div class="calc-time-block">
+              <div class="calc-time-big">${fmt(t.turn)}</div>
+              <div class="calc-time-label">per turn (×4)</div>
+            </div>
+            <div class="calc-result-details">
+              <div class="calc-detail"><strong>Total:</strong> ~${fmt(t.turn * 4)}</div>
+              <div class="calc-detail"><strong>Target:</strong> ${cut.temp.target}°C internal</div>
+            </div>
+          </div>
+          <div class="calc-tip">💡 ${cut.tip}</div>
+        </div>`;
+        return;
+      }
+
+      if (cut.hasDoneness) {
+        const t = interp(cut.weights, grams);
+        const time = t[selDoneness];
+        const dn = DONENESS.find(d => d.key === selDoneness);
+        const temp = cut.temp[selDoneness];
+        el.innerHTML = `<div class="calc-result-card">
+          <div class="calc-result-top">
+            <div class="calc-time-block">
+              <div class="calc-time-big">${fmt(time)}</div>
+              <div class="calc-time-label">per side</div>
+            </div>
+            <div class="calc-result-details">
+              <div class="calc-detail"><strong>Total:</strong> ~${fmt(time * 2)}</div>
+              <div class="calc-detail"><strong>Doneness:</strong> ${dn.label} (${temp}°C)</div>
+            </div>
+          </div>
+          <div class="calc-tip">💡 ${cut.tip}</div>
+          ${safetyNote}
+        </div>`;
+        return;
+      }
+
+      // Simple per-side
+      const t = interp(cut.weights, grams);
+      el.innerHTML = `<div class="calc-result-card">
+        <div class="calc-result-top">
+          <div class="calc-time-block">
+            <div class="calc-time-big">${fmt(t.ps)}</div>
+            <div class="calc-time-label">per side</div>
+          </div>
+          <div class="calc-result-details">
+            <div class="calc-detail"><strong>Total:</strong> ~${fmt(t.ps * 2)}</div>
+            <div class="calc-detail"><strong>Target:</strong> ${cut.temp.target}°C internal</div>
+          </div>
+        </div>
+        <div class="calc-tip">💡 ${cut.tip}</div>
+        ${safetyNote}
+      </div>`;
+    }
+
+    buildMeatPills();
 
     /* ── Amsterdam Weather (Open-Meteo, no API key needed) ── */
     const WMO = {
