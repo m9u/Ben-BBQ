@@ -802,6 +802,25 @@
     .beerindex-source a { color: #666; text-decoration: none; }
     .beerindex-source a:hover { text-decoration: underline; }
 
+    /* ── BBQ Essentials Index ── */
+    .bbqindex-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .bbqindex-cat-header {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 18px 0 8px;
+      padding-left: 2px;
+    }
+
+    .bbqindex-cat-header:first-child { margin-top: 0; }
+
     /* ── Live Radar ── */
     .radar-section {
       margin-top: 48px;
@@ -961,6 +980,15 @@
     <div class="beerindex-title">🍺 Beer Price Index</div>
     <div class="beerindex-subtitle">Live supermarket prices · sorted by cost per litre · Albert Heijn Amsterdam</div>
     <div id="beerIndexContent">
+      <div class="ah-msg">Loading prices...</div>
+    </div>
+  </section>
+
+  <!-- BBQ Essentials Index -->
+  <section class="bbqindex-section">
+    <div class="beerindex-title">🔥 BBQ Essentials Price Index</div>
+    <div class="beerindex-subtitle">Amsterdam supermarkets · sorted by value within each category</div>
+    <div id="bbqIndexContent">
       <div class="ah-msg">Loading prices...</div>
     </div>
   </section>
@@ -1749,6 +1777,135 @@
     }
 
     loadBeerIndex();
+
+    /* ── BBQ Essentials Index ── */
+    const BBQ_CATEGORIES = [
+      {
+        label: '🪵 Charcoal & Fire',
+        unit: '/kg',
+        keywords: null, // not in Open Food Facts — always use reference
+        ref: [
+          { name: 'Houtskool',       store: 'Jumbo', size: '5 kg',     price: 5.99, ppu: 1.20 },
+          { name: 'Houtskool',       store: 'AH',    size: '3 kg',     price: 4.49, ppu: 1.50 },
+          { name: 'Houtskool',       store: 'Lidl',  size: '3 kg',     price: 3.49, ppu: 1.16 },
+          { name: 'Aanmaakblokjes',  store: 'AH',    size: '24 stuks', price: 1.99, ppu: null  },
+        ],
+      },
+      {
+        label: '🥩 Meat & Sausages',
+        unit: '/100g',
+        keywords: /\b(hamburger|burger|gehakt|bbq worst|worst|sausage|kip|chicken|rib|karbonade|speklap)\b/i,
+        ref: [
+          { name: 'BBQ Worst',       store: 'AH',    size: '6 st ±500g',  price: 2.99, ppu: 0.60 },
+          { name: 'Hamburgers',      store: 'AH',    size: '4×125g',      price: 3.49, ppu: 0.70 },
+          { name: 'Kipfilet',        store: 'AH',    size: '500g',        price: 3.99, ppu: 0.80 },
+          { name: 'Spare Ribs',      store: 'AH',    size: '500g',        price: 5.49, ppu: 1.10 },
+        ],
+      },
+      {
+        label: '🌽 Sides & Veg',
+        unit: null,
+        keywords: /\b(maiskolf|corn|coleslaw|koolsalade|aardappelsalade|baguette|stokbrood|salade)\b/i,
+        ref: [
+          { name: 'Baguette',        store: 'AH',    size: '2 st',   price: 1.19, ppu: null },
+          { name: 'Maiskolf',        store: 'AH',    size: '2 st',   price: 1.49, ppu: null },
+          { name: 'Coleslaw',        store: 'AH',    size: '500g',   price: 1.79, ppu: null },
+          { name: 'Aardappelsalade', store: 'AH',    size: '500g',   price: 2.29, ppu: null },
+        ],
+      },
+      {
+        label: '🍅 Sauces & Marinades',
+        unit: '/100ml',
+        keywords: /\b(bbq sauce|barbecue sauce|ketchup|mosterd|mustard|marinade|relish)\b/i,
+        ref: [
+          { name: 'Mosterd',         store: 'AH',    size: '500g',  price: 0.89, ppu: 0.18 },
+          { name: 'BBQ Sauce',       store: 'AH',    size: '400ml', price: 1.49, ppu: 0.37 },
+          { name: 'Ketchup',         store: 'Heinz', size: '700g',  price: 2.99, ppu: 0.43 },
+          { name: 'BBQ Marinade',    store: 'AH',    size: '350ml', price: 1.79, ppu: 0.51 },
+        ],
+      },
+    ];
+
+    async function loadBBQIndex() {
+      const el = document.getElementById('bbqIndexContent');
+
+      // Attempt to enrich food categories with live Open Food Facts prices
+      let livePrices = [];
+      try {
+        const res = await fetch(
+          'https://prices.openfoodfacts.org/api/v1/prices?location_country=NL&currency=EUR&ordering=-date&page_size=200'
+        );
+        if (res.ok) {
+          const data = await res.json();
+          livePrices = data.items || [];
+        }
+      } catch (_) { /* non-critical */ }
+
+      function enrichCategory(cat) {
+        if (!cat.keywords || !livePrices.length) return null;
+
+        const seen = new Map();
+        for (const item of livePrices) {
+          const name = item.product_name || item.product?.product_name || '';
+          if (!cat.keywords.test(name) || item.price == null) continue;
+          const vol = parseLitres(item.product?.quantity || '');
+          if (!vol || vol < 0.05) continue;
+          const code = item.product_code;
+          if (!seen.has(code) || item.date > seen.get(code).date) {
+            seen.set(code, {
+              name:  name,
+              store: item.location?.name || '',
+              size:  item.product?.quantity || '',
+              price: parseFloat(item.price),
+              ppu:   null,
+              date:  item.date || '',
+            });
+          }
+        }
+
+        const results = [...seen.values()].slice(0, 4);
+        return results.length >= 2 ? results : null;
+      }
+
+      let html = '';
+
+      for (const cat of BBQ_CATEGORIES) {
+        const live = enrichCategory(cat);
+        const items = live || cat.ref;
+        const isLive = !!live;
+
+        // Mark best value (lowest ppu) within items that have a ppu
+        const withPpu = items.filter(i => i.ppu != null);
+        const bestPpu = withPpu.length ? Math.min(...withPpu.map(i => i.ppu)) : null;
+
+        html += `<div class="bbqindex-cat-header">${cat.label}${cat.unit ? ` <small style="color:#555;font-weight:400">${cat.unit}</small>` : ''}</div>`;
+
+        for (const item of items) {
+          const isBest = item.ppu != null && item.ppu === bestPpu;
+          const bestBadge  = isBest ? '<span class="beerindex-badge best">Best value</span>' : '';
+          const storeBadge = item.store ? `<span class="beerindex-store">${item.store}</span>` : '';
+          const ppuStr     = item.ppu != null ? `€${item.ppu.toFixed(2)}<small>${cat.unit || ''}</small>` : '';
+
+          html += `
+            <div class="beerindex-row">
+              <div class="beerindex-name">
+                ${item.name}${item.size ? ` <small>(${item.size})</small>` : ''}
+                ${bestBadge}${storeBadge}
+              </div>
+              <div class="beerindex-prices">
+                ${ppuStr ? `<span class="beerindex-ppl">${ppuStr}</span>` : ''}
+                <span class="beerindex-total${ppuStr ? '' : ' beerindex-ppl" style="font-size:0.92rem;color:#fff;font-weight:700'}">€${item.price.toFixed(2)}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      html += '<p class="beerindex-source">Reference prices · Amsterdam supermarkets · verified Jan 2025</p>';
+      el.innerHTML = html;
+    }
+
+    loadBBQIndex();
 
   </script>
 </body>
