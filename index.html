@@ -223,6 +223,119 @@
       padding: 20px 0;
     }
 
+    /* ── AH Deals ── */
+    .ah-section {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .ah-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #bbb;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .ah-title a {
+      color: #00a0e2;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .ah-title a:hover { text-decoration: underline; }
+
+    .ah-group-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 14px 0 8px;
+    }
+
+    .ah-deal-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .ah-deal-title {
+      font-size: 0.88rem;
+      color: #ddd;
+      flex: 1;
+    }
+
+    .ah-deal-title small {
+      color: #888;
+      font-size: 0.75rem;
+    }
+
+    .ah-deal-price {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .ah-was {
+      font-size: 0.75rem;
+      color: #888;
+      text-decoration: line-through;
+      font-weight: 400;
+      display: block;
+    }
+
+    .ah-bonus-badge {
+      background: #00a0e2;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      vertical-align: middle;
+      letter-spacing: 0.5px;
+    }
+
+    .ah-desc {
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    .ah-msg {
+      text-align: center;
+      color: #888;
+      font-size: 0.9rem;
+      padding: 12px 0;
+    }
+
+    .ah-msg a, .ah-all-link a {
+      color: #00a0e2;
+      text-decoration: none;
+    }
+
+    .ah-msg a:hover, .ah-all-link a:hover { text-decoration: underline; }
+
+    .ah-all-link {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 0.85rem;
+      color: #888;
+    }
+
     /* ── Particles ── */
     .particles {
       position: fixed;
@@ -276,6 +389,17 @@
     <div class="weather-title">Amsterdam Weather This Week</div>
     <div class="weather-grid" id="weatherGrid">
       <div class="weather-loading">Loading weather...</div>
+    </div>
+  </section>
+
+  <!-- Albert Heijn Deals -->
+  <section class="ah-section">
+    <div class="ah-title">
+      Albert Heijn Deals This Week
+      <a href="https://www.ah.nl/bonus" target="_blank" rel="noopener">All deals →</a>
+    </div>
+    <div id="ahDealsGrid">
+      <div class="ah-msg">Checking for coal &amp; beer deals...</div>
     </div>
   </section>
 
@@ -446,6 +570,95 @@
     }
 
     loadWeather();
+
+    /* ── Albert Heijn Deals (anonymous AH API, no key needed) ── */
+    async function loadAHDeals() {
+      const grid = document.getElementById('ahDealsGrid');
+      try {
+        // 1. Get anonymous token
+        const tokenRes = await fetch('https://api.ah.nl/mobile-auth/v1/auth/token/anonymous', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'appie' })
+        });
+        if (!tokenRes.ok) throw new Error('token');
+        const { access_token } = await tokenRes.json();
+
+        const headers = { 'Authorization': `Bearer ${access_token}` };
+
+        // 2. Search charcoal + beer in parallel
+        const [coalRes, beerRes] = await Promise.all([
+          fetch('https://api.ah.nl/mobile-services/product/search/v2?query=houtskool&sortOn=RELEVANCE', { headers }),
+          fetch('https://api.ah.nl/mobile-services/product/search/v2?query=bier&sortOn=RELEVANCE', { headers })
+        ]);
+
+        const coalData = await coalRes.json();
+        const beerData = await beerRes.json();
+
+        // 3. Filter only discounted items
+        function isOnDeal(p) {
+          return p.discount != null || p.discountDescription != null ||
+                 (p.price && p.price.was != null && p.price.was > p.price.now) ||
+                 p.bonusStartDate != null;
+        }
+
+        const coalDeals = (coalData.products || []).filter(isOnDeal).slice(0, 3);
+        const beerDeals = (beerData.products || []).filter(isOnDeal).slice(0, 3);
+
+        grid.innerHTML = '';
+
+        if (coalDeals.length === 0 && beerDeals.length === 0) {
+          grid.innerHTML = '<p class="ah-msg">No coal or beer deals this week. <a href="https://www.ah.nl/bonus" target="_blank" rel="noopener">Browse all deals →</a></p>';
+          return;
+        }
+
+        function renderGroup(label, deals) {
+          if (!deals.length) return;
+          const hdr = document.createElement('div');
+          hdr.className = 'ah-group-header';
+          hdr.textContent = label;
+          grid.appendChild(hdr);
+
+          deals.forEach(p => {
+            const name = p.title || p.name || 'Product';
+            const size = p.salesUnitSize || p.unitSize || '';
+            const now  = p.price?.now ?? p.price?.current ?? null;
+            const was  = p.price?.was ?? p.price?.previous ?? null;
+            const desc = p.discount?.tieredOffer?.[0] || p.discountDescription || '';
+            const hasBonus = p.discount != null || p.discountDescription != null || p.bonusStartDate != null;
+
+            const card = document.createElement('div');
+            card.className = 'ah-deal-card';
+            card.innerHTML = `
+              <div class="ah-deal-title">
+                ${name}${size ? ` <small>(${size})</small>` : ''}
+                ${desc ? `<div class="ah-desc">${desc}</div>` : ''}
+              </div>
+              <div class="ah-deal-price">
+                ${hasBonus ? '<span class="ah-bonus-badge">BONUS</span> ' : ''}
+                ${now != null ? `€${parseFloat(now).toFixed(2)}` : ''}
+                ${was != null ? `<span class="ah-was">was €${parseFloat(was).toFixed(2)}</span>` : ''}
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+        }
+
+        renderGroup('🪵 Houtskool / Charcoal', coalDeals);
+        renderGroup('🍺 Bier / Beer', beerDeals);
+
+        const footer = document.createElement('p');
+        footer.className = 'ah-all-link';
+        footer.innerHTML = '<a href="https://www.ah.nl/bonus" target="_blank" rel="noopener">See all Albert Heijn deals →</a>';
+        grid.appendChild(footer);
+
+      } catch (e) {
+        // CORS or network failure — link directly to AH bonus page
+        grid.innerHTML = '<p class="ah-msg">Can\'t load deals from here. <a href="https://www.ah.nl/bonus" target="_blank" rel="noopener">Check ah.nl/bonus directly →</a></p>';
+      }
+    }
+
+    loadAHDeals();
   </script>
 </body>
 </html>
